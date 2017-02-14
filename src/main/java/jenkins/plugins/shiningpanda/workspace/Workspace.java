@@ -30,8 +30,8 @@ import hudson.Util;
 import hudson.matrix.MatrixConfiguration;
 import hudson.matrix.MatrixProject;
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
 import hudson.model.Item;
+import hudson.model.Job;
 import hudson.model.Node;
 import hudson.model.Project;
 import hudson.util.IOUtils;
@@ -286,7 +286,7 @@ public abstract class Workspace {
      *            use the name of the project
      * @return The workspace
      */
-    public static Workspace fromNode(Node node, AbstractProject<?, ?> project, String name) {
+    public static Workspace fromNode(Node node, Job<?, ?> project, String name) {
 	// Check if node exists
 	if (node == null)
 	    // Unable to get the workspace

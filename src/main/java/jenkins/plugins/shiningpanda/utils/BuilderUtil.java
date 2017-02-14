@@ -31,6 +31,9 @@ import hudson.Launcher;
 import hudson.matrix.MatrixRun;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
+import hudson.model.Run;
+import hudson.model.TaskListener;
+
 import jenkins.plugins.shiningpanda.Messages;
 import jenkins.plugins.shiningpanda.command.Command;
 import jenkins.plugins.shiningpanda.command.CommandNature;
@@ -52,12 +55,14 @@ public class BuilderUtil {
      * @throws IOException
      * @throws InterruptedException
      */
-    public static EnvVars getEnvironment(AbstractBuild<?, ?> build, BuildListener listener)
+    public static EnvVars getEnvironment(Run<?, ?> build, TaskListener listener)
 	    throws IOException, InterruptedException {
 	// Get the base environment
 	EnvVars environment = build.getEnvironment(listener);
+    if (build instanceof AbstractBuild<?,?>) {
 	// Add build variables, for instance if user defined a text axis
-	environment.overrideAll(build.getBuildVariables());
+        environment.overrideAll(((AbstractBuild<?,?>)build).getBuildVariables());
+    }
 	// Check if define some nasty variables
 	for (String key : EnvVarsUtil.getPythonHomeKeys())
 	    // Check if key is contained
@@ -86,7 +91,7 @@ public class BuilderUtil {
      * @throws IOException
      * @throws InterruptedException
      */
-    public static PythonInstallation getInstallation(AbstractBuild<?, ?> build, BuildListener listener,
+    public static PythonInstallation getInstallation(Run<?, ?> build, TaskListener listener,
 	    EnvVars environment, String name) throws IOException, InterruptedException {
 	// Check if this is a matrix build
 	if (build instanceof MatrixRun) {
@@ -133,7 +138,7 @@ public class BuilderUtil {
      * @throws IOException
      * @throws InterruptedException
      */
-    public static Python getInterpreter(Launcher launcher, BuildListener listener, String home)
+    public static Python getInterpreter(Launcher launcher, TaskListener listener, String home)
 	    throws IOException, InterruptedException {
 	// Get an interpreter given its home
 	Python interpreter = Python.fromHome(new FilePath(launcher.getChannel(), home));
@@ -168,7 +173,7 @@ public class BuilderUtil {
      * @throws IOException
      * @throws InterruptedException
      */
-    public static Virtualenv getVirtualenv(BuildListener listener, FilePath home)
+    public static Virtualenv getVirtualenv(TaskListener listener, FilePath home)
 	    throws IOException, InterruptedException {
 	// Create the VIRTUAL environment
 	Virtualenv virtualenv = new Virtualenv(home);
@@ -207,7 +212,7 @@ public class BuilderUtil {
      * @throws IOException
      * @throws InterruptedException
      */
-    public static boolean launch(Launcher launcher, BuildListener listener, FilePath pwd, EnvVars environment,
+    public static boolean launch(Launcher launcher, TaskListener listener, FilePath pwd, EnvVars environment,
 	    Python interpreter, String nature, String command, boolean ignoreExitCode)
 		    throws IOException, InterruptedException {
 	// Get PYTHON executable
