@@ -25,8 +25,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -36,6 +40,8 @@ import hudson.matrix.MatrixProject;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import jenkins.plugins.shiningpanda.Messages;
@@ -46,7 +52,7 @@ import jenkins.plugins.shiningpanda.tools.PythonInstallation;
 import jenkins.plugins.shiningpanda.utils.BuilderUtil;
 import jenkins.plugins.shiningpanda.workspace.Workspace;
 
-public class VirtualenvBuilder extends Builder implements Serializable {
+public class VirtualenvBuilder extends Builder implements Serializable, SimplePyBuildStep {
 
     /**
      * Name of the PYTHON to invoke
@@ -150,8 +156,19 @@ public class VirtualenvBuilder extends Builder implements Serializable {
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
 	    throws InterruptedException, IOException {
-	// Get the workspace
-	Workspace workspace = Workspace.fromBuild(build);
+        return perform0(build, Workspace.fromBuild(build), build.getWorkspace(), launcher, listener);
+    }
+
+    @Override
+    public void perform(@Nonnull Run<?, ?> run, @Nonnull Workspace installation, @Nonnull FilePath workspace, @Nonnull Launcher launcher,
+                        @Nonnull TaskListener listener) throws InterruptedException, IOException {
+        if (!perform0(run, installation, workspace, launcher, listener)) {
+            throw new AbortException();
+        }
+    }
+
+    private boolean perform0(@Nonnull Run<?, ?> build, Workspace workspace, @Nonnull FilePath pwd, @Nonnull Launcher launcher,
+                             @Nonnull TaskListener listener) throws InterruptedException, IOException {
 	// Get the environment variables for this build
 	EnvVars environment = BuilderUtil.getEnvironment(build, listener);
 	// Check if this is a valid environment
@@ -176,8 +193,6 @@ public class VirtualenvBuilder extends Builder implements Serializable {
 	if (virtualenv == null)
 	    // Invalid VIRTUALENV, do not continue
 	    return false;
-	// Get the working directory
-	FilePath pwd = build.getWorkspace();
 	// Check if clean required or if configuration changed
 	if (clear || virtualenv.isOutdated(workspace, interpreter, systemSitePackages))
 	    // A new environment is required
@@ -208,7 +223,7 @@ public class VirtualenvBuilder extends Builder implements Serializable {
     /**
      * Descriptor for this builder
      */
-    @Extension
+    @Extension @Symbol("virtualenv")
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 	/**
 	 * (non-Javadoc)
