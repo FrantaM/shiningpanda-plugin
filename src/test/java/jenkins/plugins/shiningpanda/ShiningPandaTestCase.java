@@ -363,6 +363,10 @@ public abstract class ShiningPandaTestCase extends HudsonTestCase {
 	return configRoundtrip(before);
     }
 
+    protected MatrixProject createMatrixProject() throws IOException {
+        return jenkins.createProject(MatrixProject.class, createUniqueProjectName());
+    }
+
     /**
      * Performs a configuration round-trip testing for a builder on a matrix
      * project with a Python axis.
